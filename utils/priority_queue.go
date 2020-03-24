@@ -21,15 +21,9 @@ func (pq *PriorityQueue) Get(i int) interface{} {
 	return pq.array[i]
 }
 
-func (pq *PriorityQueue) Add(x interface{}, onAdd func(interface{})) {
+func (pq *PriorityQueue) Add(x interface{}) {
 	pq.array = append(pq.array, x)
-
-	first := pq.array[0]
 	sort.Slice(pq.array, pq.comparator)
-
-	if first != pq.array[0] {
-		onAdd(first)
-	}
 }
 
 func (pq *PriorityQueue) Peek() interface{} {
@@ -51,4 +45,8 @@ func (pq *PriorityQueue) Pop() interface{} {
 
 func (pq *PriorityQueue) Len() int {
 	return len(pq.array)
+}
+
+func (pq *PriorityQueue) Array() []interface{} {
+	return pq.array
 }
