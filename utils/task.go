@@ -2,8 +2,6 @@ package utils
 
 import "fmt"
 
-var sequence uint64 = 0
-
 type Marker struct {
 	Time    uint64
 	IsStart bool
@@ -20,11 +18,11 @@ type Task struct {
 	Count             uint64
 }
 
-func NewTask(period, execTime uint64) *Task {
-	sequence++
+func NewTask(id, period, execTime uint64) *Task {
 	return &Task{
-		id:                sequence,
-		name:              fmt.Sprintf("Task %d", sequence),
+		id: id,
+		name: fmt.Sprintf("Задача №%d (p: %.01fs, e: %.01fs",
+			id, float64(period)/1000, float64(execTime)/1000),
 		period:            period,
 		execTime:          execTime,
 		execTimeRemaining: execTime,
@@ -32,12 +30,8 @@ func NewTask(period, execTime uint64) *Task {
 	}
 }
 
-func (t *Task) Spawn(moment uint64, pq *PriorityQueue, onSuccess func()) {
-	if moment%t.period == 0 {
-		t.execTimeRemaining = t.execTime
-		onSuccess()
-		pq.Add(t)
-	}
+func (t *Task) CanSpawn(moment uint64) bool {
+	return moment%t.period == 0
 }
 
 func (t *Task) Execute(moment uint64, pq *PriorityQueue, onPop func(*Task)) {

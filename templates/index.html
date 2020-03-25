@@ -7,37 +7,25 @@
 <script src="https://cdn.anychart.com/releases/8.7.1/js/anychart-core.min.js"></script>
 <script src="https://cdn.anychart.com/releases/8.7.1/js/anychart-gantt.min.js"></script>
 <script>
+    anychart.format.inputDateTimeFormat("mm:ss.SS");
+    anychart.format.outputDateTimeFormat("mm:ss.SS");
     anychart.onDocumentReady(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const title = urlParams.get('title');
-        const data = {{.}}
-
-        // for (let i = 0; i < data.length; i++) {
-        //     const periods = data[i]['periods'];
-        //     for (let j = 0; j < periods.length; j++) {
-        //         periods[j].id = `${data[i].id}_${periods[j].id}`;
-        //         periods[j].start = createDate(periods[j].start);
-        //         periods[j].end = createDate(periods[j].end)
-        //     }
-        // }
+        const title = {{.title}};
+        const data = {{.traceData}}
 
         console.log('data', data)
         const treeData = anychart.data.tree(data, 'as-table');
 
         const chart = anychart.ganttResource();
+        chart.getTimeline().header().format("{%tickValue}{dateTimeFormat:ss.SS}");
         const chartTitle = chart.title();
         chartTitle.enabled(true);
         chartTitle.text(title);
-        chart.getTimeline().scale().zoomLevels([[
-            {unit: "year", count: 1},
-            {unit: "month", count: 12},
-        ]]);
+        chart.getTimeline().scale().zoomLevels([["second"]]);
         chart.container("container");
         chart.data(treeData);
         chart.draw();
         chart.fitAll();
-
-        chart.saveAsPng({"filename": "My Chart PNG"});
     });
 
     const createDate = (days) => {
