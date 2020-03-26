@@ -30,20 +30,8 @@ type SchedullingService struct {
 	tasksConfig []*Task
 }
 
-func NewSchedullingService() *SchedullingService {
-	return &SchedullingService{
-		tasksConfig: []*Task{
-			NewTask(1, 20000, 3000),
-			NewTask(2, 5000, 1000),
-			NewTask(3, 16000, 3000),
-			NewTask(4, 13000, 2000),
-			NewTask(5, 15000, 500),
-			NewTask(6, 12000, 1000),
-
-			//NewTask(1, 2000, 1000),
-			//NewTask(2, 3000, 1500),
-		},
-	}
+func NewSchedullingService(tasksConfig []*Task) *SchedullingService {
+	return &SchedullingService{tasksConfig}
 }
 
 func (ss *SchedullingService) Run(method string) (string, []map[string]interface{}) {
@@ -55,7 +43,7 @@ func (ss *SchedullingService) Run(method string) (string, []map[string]interface
 	case "edf":
 		pq = NewPriorityQueue(EDF)
 	default:
-		panic(fmt.Errorf("must be \"rm\" or \"edf\""))
+		panic(fmt.Errorf("must be \"rm\" or \"edf\" as path param"))
 	}
 
 	tasksOut := make([]Task, 0)
@@ -140,6 +128,8 @@ func formTrace(tasksOut []Task) []map[string]interface{} {
 		traceData = append(traceData, map[string]interface{}{
 			"id":      task.Id(),
 			"name":    task.Name(),
+			"p":       float64(task.Period()) / 1000,
+			"e":       float64(task.ExecTime()) / 1000,
 			"markers": markers,
 			"periods": periods,
 		})
