@@ -10,6 +10,11 @@ var RM = func(pq *PriorityQueue) func(i int, j int) bool {
 	return func(i int, j int) bool {
 		t1 := pq.Get(i).(*Task)
 		t2 := pq.Get(j).(*Task)
+		if t2.IsAperiodic && !t1.IsAperiodic {
+			return true
+		} else if !t2.IsAperiodic && t1.IsAperiodic {
+			return false
+		}
 
 		if t1.Id() == t2.Id() {
 			return t1.ExecTimeRemaining() < t2.ExecTimeRemaining()
@@ -22,6 +27,11 @@ var EDF = func(pq *PriorityQueue) func(i int, j int) bool {
 	return func(i int, j int) bool {
 		t1 := pq.Get(i).(*Task)
 		t2 := pq.Get(j).(*Task)
+		if t2.IsAperiodic && !t1.IsAperiodic {
+			return true
+		} else if !t2.IsAperiodic && t1.IsAperiodic {
+			return false
+		}
 		return t1.Count*t1.Period() < t2.Count*t2.Period()
 	}
 }
@@ -88,7 +98,7 @@ func summaryLoad(tasks []*Task) float64 {
 }
 
 func cloneAndSpawn(taskConf *Task, moment uint64, pq *PriorityQueue) {
-	inst := NewTask(taskConf.Id(), taskConf.Period(), taskConf.ExecTime())
+	inst := NewTask(taskConf.Id(), taskConf.Period(), taskConf.ExecTime(), taskConf.IsAperiodic)
 	inst.SetName(taskConf.Name())
 	if taskConf.CanSpawn(moment) {
 		taskConf.Count += 1
