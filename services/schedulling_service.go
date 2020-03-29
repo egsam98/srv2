@@ -34,7 +34,7 @@ func NewSchedullingService(tasksConfig []*Task) *SchedullingService {
 	return &SchedullingService{tasksConfig}
 }
 
-func (ss *SchedullingService) Run(method string) (string, []map[string]interface{}) {
+func (ss *SchedullingService) Run(method string) (string, []map[string]interface{}, error) {
 
 	var pq *PriorityQueue = nil
 	switch method {
@@ -43,7 +43,7 @@ func (ss *SchedullingService) Run(method string) (string, []map[string]interface
 	case "edf":
 		pq = NewPriorityQueue(EDF)
 	default:
-		panic(fmt.Errorf("must be \"rm\" or \"edf\" as path param"))
+		return "", nil, fmt.Errorf("must be \"rm\" or \"edf\" as path param")
 	}
 
 	tasksOut := make([]Task, 0)
@@ -66,7 +66,7 @@ func (ss *SchedullingService) Run(method string) (string, []map[string]interface
 
 	title := fmt.Sprintf("Алгоритм %s. Суммарная загруженность: %.3f",
 		strings.ToUpper(method), summaryLoad(ss.tasksConfig))
-	return title, formTrace(tasksOut)
+	return title, formTrace(tasksOut), nil
 }
 
 func (ss *SchedullingService) hyperPeriod() uint64 {

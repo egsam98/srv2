@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -29,10 +30,9 @@ var TasksConfig = []*Task{
 func main() {
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/favicon.ico", func(http.ResponseWriter, *http.Request) {})
-	log.Print("Start server http://localhost:8080...")
-	if err := http.ListenAndServe(":"+PORT, nil); err != nil {
-		log.Fatal(err)
-	}
+	log.Print(fmt.Sprintf("Start server http://localhost:%s...", PORT))
+	err := http.ListenAndServe(":"+PORT, nil)
+	Panic(err)
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -48,27 +48,27 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	method := strings.TrimPrefix(r.URL.Path, "/")
-	title, traceData := services.NewSchedullingService(TasksConfig).Run(method)
+	title, traceData, err := services.NewSchedullingService(TasksConfig).Run(method)
+	Panic(err)
 
 	tmpl, err := template.ParseFiles(TemplatePath)
-	if err != nil {
-		panic(err)
-	}
+	Panic(err)
 
 	bytes, err := json.Marshal(traceData)
-	if err != nil {
-		panic(err)
-	}
+	Panic(err)
 	err = ioutil.WriteFile(OUT, bytes, os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
+	Panic(err)
 
 	responseBody := map[string]interface{}{
 		"title":     title,
 		"traceData": traceData,
 	}
-	if err := tmpl.Execute(w, responseBody); err != nil {
+	err = tmpl.Execute(w, responseBody)
+	Panic(err)
+}
+
+func Panic(err error) {
+	if err != nil {
 		panic(err)
 	}
 }
