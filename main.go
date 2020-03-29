@@ -47,17 +47,24 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	method := strings.TrimPrefix(r.URL.Path, "/")
 	title, traceData, err := services.NewSchedullingService(TasksConfig).Run(method); Panic(err)
+	err = saveToJSON(traceData); if err != nil {
+		log.Fatal(err)
+	}
 
 	tmpl, err := template.ParseFiles(TemplatePath); Panic(err)
-
-	bytes, err := json.Marshal(traceData); Panic(err)
-	err = ioutil.WriteFile(OUT, bytes, os.ModePerm); Panic(err)
-
 	responseBody := map[string]interface{}{
 		"title":     title,
 		"traceData": traceData,
 	}
 	err = tmpl.Execute(w, responseBody); Panic(err)
+}
+
+func saveToJSON(traceData []map[string]interface{}) error {
+	bytes, err := json.Marshal(traceData); if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(OUT, bytes, os.ModePerm)
+	return err
 }
 
 func Panic(err error) {

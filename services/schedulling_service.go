@@ -81,6 +81,7 @@ func (ss *SchedullingService) Run(method string) (string, []map[string]interface
 	return title, formTrace(tasksOut), nil
 }
 
+//TODO: неправильно вычисляется
 func (ss *SchedullingService) hyperPeriod() uint64 {
 	var max uint64 = 0
 	for _, conf := range ss.tasksConfig {
