@@ -1,21 +1,23 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 import json
-import re
 import Draft
 
 TOP = 1
 BOTTOM = -30
 START = 1 + 2.5
-END = 40.5 - 2.5
-TRACK_Y = -3.96304547787
+END = 40.5 - 2.0
+TRACK_Y = -10
+TRACK_MARGIN = 5
 
-TABLE_WIDTH = 10
+TABLE_WIDTH = 20
 TABLE_PADDING_BOTTOM = 10
-TABLE_PADDING_START = 0
+TABLE_PADDING_START = -2
+
+FRAME = 3
+U = 0.741
 
 DOC_NAME = "SAPR_Kurs"
+
+# Пришлось...
 INPUT_PATH = '/home/egor/go/src/srv2/out.json'
 TEMPLATE_PATH = '/home/egor/go/src/srv2/A3L1 GOST.svg'
 
@@ -26,6 +28,9 @@ class Task:
         self.p = p
         self.e = e
         self.periods = periods
+
+    def u(self):
+        return str(round(float(self.e) / float(self.p), 3))
 
     @staticmethod
     def decode(obj):
@@ -39,7 +44,7 @@ class Task:
                 _map[task.id].periods += task.periods
             else:
                 _map[task.id] = task
-        return _map.values()
+        return list(_map.values())
 
 
 def show():
@@ -49,13 +54,15 @@ def show():
 def draw_table(tasks):
     Gui.activateWorkbench("DrawingWorkbench")
 
+    tasks.sort(key=lambda t: t.id)
+
     start = START + TABLE_PADDING_START
     bottom = BOTTOM + TABLE_PADDING_BOTTOM
-    block_len = float(TABLE_WIDTH) / 3
+    block_len = float(TABLE_WIDTH) / 4
     block_height = 1.
 
     # head
-    for j, head in enumerate(["id", "p", "e"]):
+    for j, head in enumerate(["id", "p", "e", "u_i (итого: {})".format(U)]):
         pl = FreeCAD.Placement()
         pl.Base = FreeCAD.Vector(start + j * block_len, bottom, 0.0)
         Draft.makeRectangle(length=block_len, height=block_height, placement=pl, face=False, support=None)
@@ -66,7 +73,7 @@ def draw_table(tasks):
     # content
     for i, task in enumerate(tasks):
         i = -i - 1
-        for j, value in zip(range(3), [task.id, task.p, task.e]):
+        for j, value in enumerate([task.id, task.p, task.e, task.u()]):
             pl = FreeCAD.Placement()
             pl.Base = FreeCAD.Vector(start + j*block_len, bottom + i, 0.0)
             Draft.makeRectangle(length=block_len, height=block_height, placement=pl, face=False, support=None)
@@ -75,32 +82,41 @@ def draw_table(tasks):
             show()
 
 
-def draw_track():
+def draw_track(y, start_num):
     Gui.activateWorkbench("DrawingWorkbench")
 
-    points = [FreeCAD.Vector(x, TRACK_Y, 0.0) for x in [START, END]]
+    points = [FreeCAD.Vector(x, y, 0.0) for x in [START, END]]
     Draft.makeWire(points, closed=False, face=True, support=None)
     show()
-    for i in xrange(int(END-START)+1):
+    for i in range(int(END-START)+1):
         points = [
-            FreeCAD.Vector(START+i, TRACK_Y + 0.25, 0),
-            FreeCAD.Vector(START+i, TRACK_Y - 0.25, 0)
+            FreeCAD.Vector(START+i, y + 0.25, 0),
+            FreeCAD.Vector(START+i, y - 0.25, 0)
         ]
         Draft.makeWire(points, closed=False, face=True, support=None)
         show()
-        Draft.makeText(str(i), FreeCAD.Vector(START+i - 0.15, TRACK_Y - 0.7))
+        Draft.makeText(str(i+start_num), FreeCAD.Vector(START+i - 0.15, y - 0.7))
+        show()
+
+    # draw frame
+    for i in range(0, int(END-START)+1, FRAME):
+        points = [
+            FreeCAD.Vector(START + i, y + 3, 0),
+            FreeCAD.Vector(START + i, y, 0)
+        ]
+        Draft.makeWire(points, closed=False, face=True, support=None)
         show()
 
 
-def draw_block(start, end, text):
+def draw_block(start, end, y, text):
     Gui.activateWorkbench("DrawingWorkbench")
     start = (START + start)
     end = (START + end)
     pl = FreeCAD.Placement()
-    pl.Base = FreeCAD.Vector(start, TRACK_Y, 0.0)
+    pl.Base = FreeCAD.Vector(start, y, 0.0)
     Draft.makeRectangle(length=end - start, height=2, placement=pl, face=False, support=None)
     show()
-    Draft.makeText(text, FreeCAD.Vector(start + float(end - start)/2 - 0.15, TRACK_Y + 1))
+    Draft.makeText(text, FreeCAD.Vector(start + float(end - start)/2 - 0.15, y + 1))
     show()
 
 
@@ -111,22 +127,30 @@ App.ActiveDocument = doc
 # Create drawing frame
 doc.addObject('Drawing::FeaturePage', 'Page')
 doc.Page.Template = TEMPLATE_PATH
-
-# FreeCADGui.getDocument("SAPR_Kurs").getObject("Page").HintOffsetX = -50.00
-# FreeCADGui.getDocument("SAPR_Kurs").getObject("Page").HintOffsetY = 0.00
-# FreeCADGui.getDocument("SAPR_Kurs").getObject("Page").HintScale = 1.00
-
 Gui.activateWorkbench("DraftWorkbench")
 
-draw_track()
+draw_track(TRACK_Y, 0)
+tracks = [TRACK_Y]
 with open(INPUT_PATH) as f:
     tasks = [Task.decode(obj) for obj in json.load(f)]
     tasks = Task.merge(tasks)
     draw_table(tasks)
     for task in tasks:
         for period in task.periods:
-            draw_block(float(period["start"])/1000, float(period["end"])/1000, task.id)
+            y = TRACK_Y
+            if period["start"] != 0 and period["end"] != 0:
+                y = TRACK_Y - TRACK_MARGIN*(period["start"] // ((END-START + 1)*1000))
+                period["start"] = period["start"] % ((END-START + 1)*1000)
+                period["end"] = period["end"] % ((END-START + 1)*1000)
+                if y not in tracks:
+                    draw_track(y, int(END-START) + len(tracks))
+                    tracks.append(y)
+            draw_block(float(period["start"])/1000, float(period["end"])/1000, y, task.id)
 
 Gui.activateWorkbench("ArchWorkbench")
 
+# python 2.7
 # execfile('/home/egor/go/src/srv2/freecad.py')
+
+# python3+
+# exec(open("/home/egor/go/src/srv2/freecad.py").read())
