@@ -70,6 +70,10 @@ func (ss *SchedullingService) Run(method string) (string, []map[string]interface
 		}
 	}
 
+	for _, conf := range ss.tasksConfig {
+		conf.Count = 0
+	}
+
 	title := fmt.Sprintf("Алгоритм %s. Суммарная загруженность: %.3f",
 		strings.ToUpper(method), summaryLoad(ss.tasksConfig))
 	return title, formTrace(tasksOut)
