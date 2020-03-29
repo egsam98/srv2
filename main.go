@@ -18,12 +18,12 @@ const OUT = "out.json"
 
 var TemplatePath = path.Join("templates", "index.html")
 var TasksConfig = []*Task{
-	NewTask(1, 20000, 3000),
-	NewTask(2, 5000, 1000),
-	NewTask(3, 16000, 3000),
-	NewTask(4, 13000, 2000),
-	NewTask(5, 15000, 500),
-	NewTask(6, 12000, 1000),
+	NewTask(1, 20000, 3000, false),
+	NewTask(2, 25000, 1000, false),
+	NewTask(3, 25000, 3000, false),
+	NewTask(4, 25000, 2000, false),
+	NewTask(5, 25000, 500, false),
+	NewTask(6, 25000, 1000, false),
 }
 
 func main() {

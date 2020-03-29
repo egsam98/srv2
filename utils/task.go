@@ -16,9 +16,10 @@ type Task struct {
 	execMoments       []uint64
 	markers           []Marker
 	Count             uint64
+	IsAperiodic       bool
 }
 
-func NewTask(id, period, execTime uint64) *Task {
+func NewTask(id, period, execTime uint64, isAperiodic bool) *Task {
 	return &Task{
 		id: id,
 		name: fmt.Sprintf("Задача №%d (p: %.01fs, e: %.01fs",
@@ -27,6 +28,7 @@ func NewTask(id, period, execTime uint64) *Task {
 		execTime:          execTime,
 		execTimeRemaining: execTime,
 		execMoments:       make([]uint64, 0),
+		IsAperiodic:       isAperiodic,
 	}
 }
 
