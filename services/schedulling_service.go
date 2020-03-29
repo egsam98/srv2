@@ -60,7 +60,9 @@ func (ss *SchedullingService) Run(method string) (string, []map[string]interface
 	maxIters := ss.hyperPeriod()
 	for moment := uint64(0); moment < maxIters; moment++ {
 		for _, taskConf := range ss.tasksConfig {
-			cloneAndSpawn(taskConf, moment, pq)
+			if taskConf.CanSpawn(moment) {
+				cloneAndSpawn(taskConf, pq)
+			}
 		}
 
 		if t := pq.Peek(); t != nil {
@@ -97,14 +99,12 @@ func summaryLoad(tasks []*Task) float64 {
 	return sum
 }
 
-func cloneAndSpawn(taskConf *Task, moment uint64, pq *PriorityQueue) {
+func cloneAndSpawn(taskConf *Task, pq *PriorityQueue) {
 	inst := NewTask(taskConf.Id(), taskConf.Period(), taskConf.ExecTime(), taskConf.IsAperiodic)
 	inst.SetName(taskConf.Name())
-	if taskConf.CanSpawn(moment) {
-		taskConf.Count += 1
-		inst.Count = taskConf.Count
-		pq.Add(inst)
-	}
+	taskConf.Count += 1
+	inst.Count = taskConf.Count
+	pq.Add(inst)
 }
 
 func formTrace(tasksOut []Task) []map[string]interface{} {
